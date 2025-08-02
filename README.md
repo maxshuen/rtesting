@@ -33,9 +33,14 @@ This tool automates the process of running backtests in MetaTrader 4 (MT4) for y
         "Lots": "0.1",
         "StopLoss": "50",
         "TakeProfit": "100",
-        "MovingPeriod": "14",
+        "MovingPeriod": {
+            "Start": 10,
+            "Step": 1,
+            "Stop": 20
+        },
         "MovingShift": "0"
-      }
+      },
+      "Optimization": true
     }
     ```
 
@@ -44,7 +49,12 @@ This tool automates the process of running backtests in MetaTrader 4 (MT4) for y
     *   `Period`: The chart period in minutes (e.g., 1, 5, 15, 60).
     *   `FromDate`: The start date of the backtest in "YYYY-MM-DD" format.
     *   `ToDate`: The end date of the backtest in "YYYY-MM-DD" format.
-    *   `Parameters`: A dictionary of the parameters for your Expert Advisor.
+    *   `Parameters`: A dictionary of the parameters for your Expert Advisor. For parameters that you want to optimize, you can provide an object with `Start`, `Step`, and `Stop` values.
+    *   `Optimization`: A boolean value that indicates whether to run an optimization.
+
+### Constraints
+
+Currently, the tool does not support constraints directly in the setting files. However, you can implement constraints in your Expert Advisor's code. For example, you can add code to your EA to check if the parameter values are valid and to skip the backtest if they are not.
 
 5.  **Configure the MT4 terminal path:**
     Open the `Program.cs` file and update the `terminalPath` variable with the correct path to your `terminal.exe` file.

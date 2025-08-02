@@ -66,7 +66,24 @@ namespace MT4BackTester
             // Add expert advisor parameters
             foreach (var param in settings.Parameters)
             {
-                sb.AppendLine($"{param.Key}={param.Value}");
+                if (param.Value is string)
+                {
+                    sb.AppendLine($"{param.Key}={param.Value}");
+                }
+                else if (param.Value is Newtonsoft.Json.Linq.JObject)
+                {
+                    var optimizationSettings = ((Newtonsoft.Json.Linq.JObject)param.Value).ToObject<OptimizationSettings>();
+                    sb.AppendLine($"{param.Key},F=1");
+                    sb.AppendLine($"{param.Key},1={optimizationSettings.Start}");
+                    sb.AppendLine($"{param.Key},2={optimizationSettings.Step}");
+                    sb.AppendLine($"{param.Key},3={optimizationSettings.Stop}");
+                }
+            }
+
+            if (settings.Optimization)
+            {
+                sb.AppendLine("TestExpertEnable=true");
+                sb.AppendLine("TestOptimization=true");
             }
 
             File.WriteAllText(configFile, sb.ToString());
@@ -107,6 +124,14 @@ namespace MT4BackTester
         public int Period { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
-        public Dictionary<string, string> Parameters { get; set; }
+        public Dictionary<string, object> Parameters { get; set; }
+        public bool Optimization { get; set; }
+    }
+
+    public class OptimizationSettings
+    {
+        public double Start { get; set; }
+        public double Step { get; set; }
+        public double Stop { get; set; }
     }
 }
