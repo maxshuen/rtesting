@@ -14,7 +14,7 @@ This tool automates the process of running backtests in MetaTrader 4 (MT4) for y
     Open the `MT4BackTester.csproj` file in Visual Studio.
 
 2.  **Build the project:**
-    Build the solution by clicking on `Build > Build Solution` in the menu bar. This will create the `MT4BackTester.exe` file in the `bin/Debug/netcoreapp3.1` folder.
+    Build the solution by clicking on `Build > Build Solution` in the menu bar. This will create the `MT4BackTester.exe` file in the `bin/Debug/net6.0` folder.
 
 3.  **Create a settings folder:**
     Create a folder where you will store your backtest setting files. For example, you can create a folder named `Settings` in the project's root directory.
@@ -72,7 +72,7 @@ Currently, the tool does not support constraints directly in the setting files. 
     Navigate to the directory where the `MT4BackTester.exe` file was created.
 
     ```bash
-    cd path\to\your\project\MT4BackTester\bin\Debug\netcoreapp3.1
+    cd path\to\your\project\MT4BackTester\bin\Debug\net6.0
     ```
 
 3.  **Run the back-tester:**
