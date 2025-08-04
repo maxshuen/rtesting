@@ -60,8 +60,10 @@ namespace MT4BackTester
             sb.AppendLine($"Period={settings.Period}");
             sb.AppendLine($"FromDate={settings.FromDate:yyyy.MM.dd}");
             sb.AppendLine($"ToDate={settings.ToDate:yyyy.MM.dd}");
-            sb.AppendLine($"Report=Reports\\{settings.ExpertAdvisor}-{settings.Symbol}-{settings.Period}-{DateTime.Now:yyyyMMddHHmmss}");
+            string reportFileName = $"{settings.ExpertAdvisor}-{settings.Symbol}-{settings.Period}-{DateTime.Now:yyyyMMddHHmmss}";
+            sb.AppendLine($"Report=Reports\\{reportFileName}");
             sb.AppendLine("Model=0"); // 0 for Every tick, 1 for Control points, 2 for Open prices only
+            sb.AppendLine("TestOnTick=true"); // Use tick data
 
             // Add expert advisor parameters
             foreach (var param in settings.Parameters)
@@ -97,11 +99,24 @@ namespace MT4BackTester
 
             try
             {
+                Console.WriteLine($"Starting backtest for {settings.ExpertAdvisor} on {settings.Symbol}...");
                 using (Process process = Process.Start(startInfo))
                 {
-                    process.WaitForExit();
+                    while (!process.HasExited)
+                    {
+                        Console.Write(".");
+                        System.Threading.Thread.Sleep(5000);
+                    }
                 }
-                Console.WriteLine($"Backtest for {settings.ExpertAdvisor} on {settings.Symbol} completed.");
+                Console.WriteLine($"\nBacktest for {settings.ExpertAdvisor} on {settings.Symbol} completed.");
+
+                // Save the optimized settings
+                if (settings.Optimization)
+                {
+                    string optimizedSettingsPath = Path.Combine("Reports", $"{reportFileName}.json");
+                    string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
+                    File.WriteAllText(optimizedSettingsPath, json);
+                }
             }
             catch (Exception ex)
             {

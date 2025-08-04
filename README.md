@@ -83,3 +83,9 @@ Currently, the tool does not support constraints directly in the setting files. 
     ```
 
     The back-tester will then iterate through all the JSON files in the settings folder, launch MT4 for each file, and run the backtest. The backtest reports will be saved in a `Reports` folder inside the project's output directory.
+
+### New Features in This Version
+
+*   **Use Tick Data:** The back-tester now uses tick data for backtesting, which provides the most accurate results.
+*   **Progress Indication:** The back-tester now provides progress indication during the optimization process, so you can see that the tool is still working and has not halted.
+*   **Save Optimized Settings:** The back-tester now saves the optimized settings to a file in the `Reports` folder. This makes it easy to identify the settings that were used for each backtest.
