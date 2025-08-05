@@ -100,22 +100,48 @@ namespace MT4BackTester
             try
             {
                 Console.WriteLine($"Starting backtest for {settings.ExpertAdvisor} on {settings.Symbol}...");
+                var stopWatch = new Stopwatch();
+                stopWatch.Start();
+
                 using (Process process = Process.Start(startInfo))
                 {
                     while (!process.HasExited)
                     {
-                        Console.Write(".");
-                        System.Threading.Thread.Sleep(5000);
+                        Console.Write($"\rElapsed time: {stopWatch.Elapsed:hh\\:mm\\:ss}");
+                        System.Threading.Thread.Sleep(1000);
                     }
                 }
-                Console.WriteLine($"\nBacktest for {settings.ExpertAdvisor} on {settings.Symbol} completed.");
+                stopWatch.Stop();
+                Console.WriteLine($"\nBacktest for {settings.ExpertAdvisor} on {settings.Symbol} completed in {stopWatch.Elapsed:hh\\:mm\\:ss}.");
 
-                // Save the optimized settings
+                // Save the optimized settings and summary
                 if (settings.Optimization)
                 {
                     string optimizedSettingsPath = Path.Combine("Reports", $"{reportFileName}.json");
                     string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                     File.WriteAllText(optimizedSettingsPath, json);
+
+                    string summaryPath = Path.Combine("Reports", "summary.csv");
+                    bool fileExists = File.Exists(summaryPath);
+                    using (var writer = new StreamWriter(summaryPath, true))
+                    {
+                        if (!fileExists)
+                        {
+                            writer.WriteLine("Set,Source,CCY,Frequency,Profit,Draw Down,Trades,Profit Factor,Backtest Dates," + string.Join(",", settings.Parameters.Keys));
+                        }
+
+                        string reportPath = Path.Combine("Reports", $"{reportFileName}.htm");
+                        if (File.Exists(reportPath))
+                        {
+                            var report = new StreamReader(reportPath).ReadToEnd();
+                            var profit = GetValueFromReport(report, "Total net profit");
+                            var drawdown = GetValueFromReport(report, "Maximal drawdown");
+                            var trades = GetValueFromReport(report, "Total trades");
+                            var profitFactor = GetValueFromReport(report, "Profit factor");
+
+                            writer.WriteLine($"{reportFileName},Preset A,{settings.Symbol},H1,{profit},{drawdown},{trades},{profitFactor},{settings.FromDate:yyyyMMdd}-{settings.ToDate:yyyyMMdd}," + string.Join(",", settings.Parameters.Values));
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -128,6 +154,21 @@ namespace MT4BackTester
                 {
                     File.Delete(configFile);
                 }
+            }
+        }
+
+        static string GetValueFromReport(string report, string key)
+        {
+            try
+            {
+                var doc = new HtmlAgilityPack.HtmlDocument();
+                doc.LoadHtml(report);
+                var node = doc.DocumentNode.SelectSingleNode($"//td[contains(text(),'{key}')]/following-sibling::td");
+                return node?.InnerText;
+            }
+            catch
+            {
+                return "N/A";
             }
         }
     }
