@@ -76,13 +76,13 @@ Currently, the tool does not support constraints directly in the setting files. 
     ```
 
 3.  **Run the back-tester:**
-    Run the back-tester by providing the path to your settings folder as a command-line argument.
+    Run the back-tester by providing the path to your settings folder and the output folder as command-line arguments.
 
     ```bash
-    MT4BackTester.exe "path\to\your\settings\folder"
+    MT4BackTester.exe "path\to\your\settings\folder" "path\to\your\output\folder"
     ```
 
-    The back-tester will then iterate through all the JSON files in the settings folder, launch MT4 for each file, and run the backtest. The backtest reports will be saved in a `Reports` folder inside the project's output directory.
+    The back-tester will then iterate through all the JSON files in the settings folder, launch MT4 for each file, and run the backtest. The backtest reports will be saved in the specified output folder.
 
 ### New Features in This Version
 

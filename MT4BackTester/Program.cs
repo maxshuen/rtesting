@@ -14,13 +14,14 @@ namespace MT4BackTester
     {
         static void Main(string[] args)
         {
-            if (args.Length == 0)
+            if (args.Length < 2)
             {
-                Console.WriteLine("Please provide the path to the settings folder.");
+                Console.WriteLine("Usage: MT4BackTester.exe <settings_folder> <output_folder>");
                 return;
             }
 
             string settingsFolder = args[0];
+            string outputFolder = args[1];
             if (!Directory.Exists(settingsFolder))
             {
                 Console.WriteLine($"Settings folder not found: {settingsFolder}");
@@ -35,7 +36,7 @@ namespace MT4BackTester
                     string json = File.ReadAllText(settingFile);
                     var settings = JsonConvert.DeserializeObject<BacktestSettings>(json);
 
-                    RunBacktest(settings);
+                    RunBacktest(settings, outputFolder);
                 }
                 catch (Exception ex)
                 {
@@ -44,7 +45,7 @@ namespace MT4BackTester
             }
         }
 
-        static void RunBacktest(BacktestSettings settings)
+        static void RunBacktest(BacktestSettings settings, string outputFolder)
         {
             // Path to the MT4 terminal executable
             string terminalPath = @"C:\Program Files (x86)\MetaTrader 4\terminal.exe";
@@ -61,7 +62,7 @@ namespace MT4BackTester
             sb.AppendLine($"FromDate={settings.FromDate:yyyy.MM.dd}");
             sb.AppendLine($"ToDate={settings.ToDate:yyyy.MM.dd}");
             string reportFileName = $"{settings.ExpertAdvisor}-{settings.Symbol}-{settings.Period}-{DateTime.Now:yyyyMMddHHmmss}";
-            sb.AppendLine($"Report=Reports\\{reportFileName}");
+            sb.AppendLine($"Report={Path.Combine(outputFolder, reportFileName)}");
             sb.AppendLine("Model=0"); // 0 for Every tick, 1 for Control points, 2 for Open prices only
             sb.AppendLine("TestOnTick=true"); // Use tick data
 
@@ -117,11 +118,11 @@ namespace MT4BackTester
                 // Save the optimized settings and summary
                 if (settings.Optimization)
                 {
-                    string optimizedSettingsPath = Path.Combine("Reports", $"{reportFileName}.json");
+                    string optimizedSettingsPath = Path.Combine(outputFolder, $"{reportFileName}.json");
                     string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                     File.WriteAllText(optimizedSettingsPath, json);
 
-                    string summaryPath = Path.Combine("Reports", "summary.csv");
+                    string summaryPath = Path.Combine(outputFolder, "summary.csv");
                     bool fileExists = File.Exists(summaryPath);
                     using (var writer = new StreamWriter(summaryPath, true))
                     {
@@ -130,7 +131,7 @@ namespace MT4BackTester
                             writer.WriteLine("Set,Source,CCY,Frequency,Profit,Draw Down,Trades,Profit Factor,Backtest Dates," + string.Join(",", settings.Parameters.Keys));
                         }
 
-                        string reportPath = Path.Combine("Reports", $"{reportFileName}.htm");
+                        string reportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
                         if (File.Exists(reportPath))
                         {
                             var report = new StreamReader(reportPath).ReadToEnd();
