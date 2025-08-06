@@ -88,6 +88,7 @@ Currently, the tool does not support constraints directly in the setting files. 
 
 *   **Use Tick Data:** The back-tester now uses tick data for backtesting, which provides the most accurate results.
 *   **Progress Indication:** The back-tester now provides progress indication during the optimization process, so you can see that the tool is still working and has not halted.
-*   **Save Optimized Settings:** The back-tester now saves the optimized settings to a file in the `Reports` folder. This makes it easy to identify the settings that were used for each backtest.
+*   **Save Optimized Settings:** The back-tester now saves the optimized settings to a `.set` file in the same format as the MT4 terminal.
+*   **Save Backtest Report:** The back-tester now saves the backtest report as an `.htm` file, including the graph.
 *   **Timer:** The back-tester now shows the elapsed time of the backtest.
 *   **Summary File:** The back-tester now creates a CSV file that summarizes the results of the optimization.

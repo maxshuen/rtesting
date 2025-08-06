@@ -65,6 +65,7 @@ namespace MT4BackTester
             sb.AppendLine($"Report={Path.Combine(outputFolder, reportFileName)}");
             sb.AppendLine("Model=0"); // 0 for Every tick, 1 for Control points, 2 for Open prices only
             sb.AppendLine("TestOnTick=true"); // Use tick data
+            sb.AppendLine("TestGraph=true"); // Include graph in the report
 
             // Add expert advisor parameters
             foreach (var param in settings.Parameters)
@@ -118,9 +119,21 @@ namespace MT4BackTester
                 // Save the optimized settings and summary
                 if (settings.Optimization)
                 {
-                    string optimizedSettingsPath = Path.Combine(outputFolder, $"{reportFileName}.json");
-                    string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
-                    File.WriteAllText(optimizedSettingsPath, json);
+                    string reportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
+                    if (File.Exists(reportPath))
+                    {
+                        var report = new StreamReader(reportPath).ReadToEnd();
+                        var optimizedParameters = GetOptimizedParametersFromReport(report);
+
+                        string optimizedSettingsPath = Path.Combine(outputFolder, $"{reportFileName}.set");
+                        using (var writer = new StreamWriter(optimizedSettingsPath))
+                        {
+                            foreach (var param in optimizedParameters)
+                            {
+                                writer.WriteLine($"{param.Key}={param.Value}");
+                            }
+                        }
+                    }
 
                     string summaryPath = Path.Combine(outputFolder, "summary.csv");
                     bool fileExists = File.Exists(summaryPath);
@@ -171,6 +184,37 @@ namespace MT4BackTester
             {
                 return "N/A";
             }
+        }
+
+        static Dictionary<string, string> GetOptimizedParametersFromReport(string report)
+        {
+            var parameters = new Dictionary<string, string>();
+            try
+            {
+                var doc = new HtmlAgilityPack.HtmlDocument();
+                doc.LoadHtml(report);
+                var table = doc.DocumentNode.SelectSingleNode("//table[.//th[text()='Inputs']]");
+                if (table != null)
+                {
+                    var rows = table.SelectNodes(".//tr[td]");
+                    if (rows != null)
+                    {
+                        foreach (var row in rows)
+                        {
+                            var cells = row.SelectNodes("td");
+                            if (cells != null && cells.Count >= 2)
+                            {
+                                parameters.Add(cells[0].InnerText, cells[1].InnerText);
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore errors
+            }
+            return parameters;
         }
     }
 
