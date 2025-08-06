@@ -62,6 +62,10 @@ namespace MT4BackTester
             sb.AppendLine($"FromDate={settings.FromDate:yyyy.MM.dd}");
             sb.AppendLine($"ToDate={settings.ToDate:yyyy.MM.dd}");
             string reportFileName = $"{settings.ExpertAdvisor}-{settings.Symbol}-{settings.Period}-{DateTime.Now:yyyyMMddHHmmss}";
+            if (settings.Optimization)
+            {
+                reportFileName += "_opt";
+            }
             sb.AppendLine($"Report={Path.Combine(outputFolder, reportFileName)}");
             sb.AppendLine("Model=0"); // 0 for Every tick, 1 for Control points, 2 for Open prices only
             sb.AppendLine("TestOnTick=true"); // Use tick data
