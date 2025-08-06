@@ -116,22 +116,19 @@ namespace MT4BackTester
                 stopWatch.Stop();
                 Console.WriteLine($"\nBacktest for {settings.ExpertAdvisor} on {settings.Symbol} completed in {stopWatch.Elapsed:hh\\:mm\\:ss}.");
 
-                // Save the optimized settings and summary
-                if (settings.Optimization)
+                // Save the settings and summary
+                string reportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
+                if (File.Exists(reportPath))
                 {
-                    string reportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
-                    if (File.Exists(reportPath))
-                    {
-                        var report = new StreamReader(reportPath).ReadToEnd();
-                        var optimizedParameters = GetOptimizedParametersFromReport(report);
+                    var report = new StreamReader(reportPath).ReadToEnd();
+                    var optimizedParameters = GetOptimizedParametersFromReport(report);
 
-                        string optimizedSettingsPath = Path.Combine(outputFolder, $"{reportFileName}.set");
-                        using (var writer = new StreamWriter(optimizedSettingsPath))
+                    string optimizedSettingsPath = Path.Combine(outputFolder, $"{reportFileName}.set");
+                    using (var writer = new StreamWriter(optimizedSettingsPath))
+                    {
+                        foreach (var param in optimizedParameters)
                         {
-                            foreach (var param in optimizedParameters)
-                            {
-                                writer.WriteLine($"{param.Key}={param.Value}");
-                            }
+                            writer.WriteLine($"{param.Key}={param.Value}");
                         }
                     }
 
