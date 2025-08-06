@@ -145,14 +145,14 @@ namespace MT4BackTester
                             writer.WriteLine("Set,Source,CCY,Frequency,Profit,Draw Down,Trades,Profit Factor,Backtest Dates," + string.Join(",", settings.Parameters.Keys));
                         }
 
-                        string reportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
-                        if (File.Exists(reportPath))
+                        string summaryReportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
+                        if (File.Exists(summaryReportPath))
                         {
-                            var report = new StreamReader(reportPath).ReadToEnd();
-                            var profit = GetValueFromReport(report, "Total net profit");
-                            var drawdown = GetValueFromReport(report, "Maximal drawdown");
-                            var trades = GetValueFromReport(report, "Total trades");
-                            var profitFactor = GetValueFromReport(report, "Profit factor");
+                            var summaryReport = new StreamReader(summaryReportPath).ReadToEnd();
+                            var profit = GetValueFromReport(summaryReport, "Total net profit");
+                            var drawdown = GetValueFromReport(summaryReport, "Maximal drawdown");
+                            var trades = GetValueFromReport(summaryReport, "Total trades");
+                            var profitFactor = GetValueFromReport(summaryReport, "Profit factor");
 
                             writer.WriteLine($"{reportFileName},Preset A,{settings.Symbol},H1,{profit},{drawdown},{trades},{profitFactor},{settings.FromDate:yyyyMMdd}-{settings.ToDate:yyyyMMdd}," + string.Join(",", settings.Parameters.Values));
                         }
