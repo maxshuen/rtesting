@@ -16,32 +16,29 @@ namespace MT4BackTester
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: MT4BackTester.exe <settings_folder> <output_folder>");
+                Console.WriteLine("Usage: MT4BackTester.exe <json_file> <output_folder>");
                 return;
             }
 
-            string settingsFolder = args[0];
+            string jsonFile = args[0];
             string outputFolder = args[1];
-            if (!Directory.Exists(settingsFolder))
+
+            if (!File.Exists(jsonFile))
             {
-                Console.WriteLine($"Settings folder not found: {settingsFolder}");
+                Console.WriteLine($"Json file not found: {jsonFile}");
                 return;
             }
 
-            var settingFiles = Directory.GetFiles(settingsFolder, "*.json");
-            foreach (var settingFile in settingFiles)
+            try
             {
-                try
-                {
-                    string json = File.ReadAllText(settingFile);
-                    var settings = JsonConvert.DeserializeObject<BacktestSettings>(json);
+                string json = File.ReadAllText(jsonFile);
+                var settings = JsonConvert.DeserializeObject<BacktestSettings>(json);
 
-                    RunBacktest(settings, outputFolder);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing setting file {settingFile}: {ex.Message}");
-                }
+                RunBacktest(settings, outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing json file {jsonFile}: {ex.Message}");
             }
         }
 
@@ -62,10 +59,6 @@ namespace MT4BackTester
             sb.AppendLine($"FromDate={settings.FromDate:yyyy.MM.dd}");
             sb.AppendLine($"ToDate={settings.ToDate:yyyy.MM.dd}");
             string reportFileName = $"{settings.ExpertAdvisor}-{settings.Symbol}-{settings.Period}-{DateTime.Now:yyyyMMddHHmmss}";
-            if (settings.Optimization)
-            {
-                reportFileName += "_opt";
-            }
             sb.AppendLine($"Report={Path.Combine(outputFolder, reportFileName)}");
             sb.AppendLine("Model=0"); // 0 for Every tick, 1 for Control points, 2 for Open prices only
             sb.AppendLine("TestOnTick=true"); // Use tick data
@@ -74,24 +67,7 @@ namespace MT4BackTester
             // Add expert advisor parameters
             foreach (var param in settings.Parameters)
             {
-                if (param.Value is string)
-                {
-                    sb.AppendLine($"{param.Key}={param.Value}");
-                }
-                else if (param.Value is Newtonsoft.Json.Linq.JObject)
-                {
-                    var optimizationSettings = ((Newtonsoft.Json.Linq.JObject)param.Value).ToObject<OptimizationSettings>();
-                    sb.AppendLine($"{param.Key},F=1");
-                    sb.AppendLine($"{param.Key},1={optimizationSettings.Start}");
-                    sb.AppendLine($"{param.Key},2={optimizationSettings.Step}");
-                    sb.AppendLine($"{param.Key},3={optimizationSettings.Stop}");
-                }
-            }
-
-            if (settings.Optimization)
-            {
-                sb.AppendLine("TestExpertEnable=true");
-                sb.AppendLine("TestOptimization=true");
+                sb.AppendLine($"{param.Key}={param.Value}");
             }
 
             File.WriteAllText(configFile, sb.ToString());
@@ -120,42 +96,13 @@ namespace MT4BackTester
                 stopWatch.Stop();
                 Console.WriteLine($"\nBacktest for {settings.ExpertAdvisor} on {settings.Symbol} completed in {stopWatch.Elapsed:hh\\:mm\\:ss}.");
 
-                // Save the settings and summary
-                string reportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
-                if (File.Exists(reportPath))
+                // Save the settings
+                string settingsPath = Path.Combine(outputFolder, $"{reportFileName}.set");
+                using (var writer = new StreamWriter(settingsPath))
                 {
-                    var report = new StreamReader(reportPath).ReadToEnd();
-                    var optimizedParameters = GetOptimizedParametersFromReport(report);
-
-                    string optimizedSettingsPath = Path.Combine(outputFolder, $"{reportFileName}.set");
-                    using (var writer = new StreamWriter(optimizedSettingsPath))
+                    foreach (var param in settings.Parameters)
                     {
-                        foreach (var param in optimizedParameters)
-                        {
-                            writer.WriteLine($"{param.Key}={param.Value}");
-                        }
-                    }
-
-                    string summaryPath = Path.Combine(outputFolder, "summary.csv");
-                    bool fileExists = File.Exists(summaryPath);
-                    using (var writer = new StreamWriter(summaryPath, true))
-                    {
-                        if (!fileExists)
-                        {
-                            writer.WriteLine("Set,Source,CCY,Frequency,Profit,Draw Down,Trades,Profit Factor,Backtest Dates," + string.Join(",", settings.Parameters.Keys));
-                        }
-
-                        string summaryReportPath = Path.Combine(outputFolder, $"{reportFileName}.htm");
-                        if (File.Exists(summaryReportPath))
-                        {
-                            var summaryReport = new StreamReader(summaryReportPath).ReadToEnd();
-                            var profit = GetValueFromReport(summaryReport, "Total net profit");
-                            var drawdown = GetValueFromReport(summaryReport, "Maximal drawdown");
-                            var trades = GetValueFromReport(summaryReport, "Total trades");
-                            var profitFactor = GetValueFromReport(summaryReport, "Profit factor");
-
-                            writer.WriteLine($"{reportFileName},Preset A,{settings.Symbol},H1,{profit},{drawdown},{trades},{profitFactor},{settings.FromDate:yyyyMMdd}-{settings.ToDate:yyyyMMdd}," + string.Join(",", settings.Parameters.Values));
-                        }
+                        writer.WriteLine($"{param.Key}={param.Value}");
                     }
                 }
             }
@@ -227,13 +174,5 @@ namespace MT4BackTester
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public Dictionary<string, object> Parameters { get; set; }
-        public bool Optimization { get; set; }
-    }
-
-    public class OptimizationSettings
-    {
-        public double Start { get; set; }
-        public double Step { get; set; }
-        public double Stop { get; set; }
     }
 }
