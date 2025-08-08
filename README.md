@@ -1,59 +1,38 @@
-# MT4 Back-tester
+# MT4 Batch Back-tester
 
-This project contains two tools:
+This tool automates the process of running backtests in MetaTrader 4 (MT4) for your Expert Advisors (EAs). It can process an entire folder of `.set` files, running a backtest for each one and saving the results.
 
-*   **SetToJson:** A tool to convert `.set` files to `.json` files.
-*   **MT4BackTester:** A tool to run backtests in MetaTrader 4 (MT4) for your Expert Advisors (EAs).
-
-## SetToJson
-
-This tool converts a `.set` file from the MT4 terminal to a `.json` file that can be used with the back-tester.
-
-### Usage
-
-```bash
-SetToJson.exe "path\to\your\set\file.set" "path\to\your\json\file.json"
-```
-
-## MT4BackTester
-
-This tool runs a backtest in MT4 for your Expert Advisor. It takes a `.json` file as input and saves the backtest report and settings to a specified folder.
-
-### Prerequisites
+## Prerequisites
 
 *   Windows operating system
 *   Visual Studio
 *   MetaTrader 4 (MT4) installed
 
-### Setup
+## Setup
 
 1.  **Open the project in Visual Studio:**
-    Open the `MT4BackTester.sln` file in Visual Studio.
+    Open the `MT4BackTester.csproj` file in Visual Studio.
 
 2.  **Build the project:**
-    Build the solution by clicking on `Build > Build Solution` in the menu bar. This will create the `MT4BackTester.exe` and `SetToJson.exe` files in the `bin/Debug/net8.0` folder.
+    Build the solution by clicking on `Build > Build Solution` in the menu bar. This will create the `MT4BackTester.exe` file in the `bin/Debug/net8.0` folder.
 
 3.  **Configure the MT4 terminal path:**
-    Open the `MT4BackTester/Program.cs` file and update the `terminalPath` variable with the correct path to your `terminal.exe` file.
+    Open the `Program.cs` file and update the `terminalPath` variable with the correct path to your `terminal.exe` file.
 
     ```csharp
     string terminalPath = @"C:\Program Files (x86)\MetaTrader 4\terminal.exe";
     ```
 
-### Running the Back-tester
+## Running the Back-tester
 
-1.  **Convert your `.set` file to a `.json` file:**
-    Use the `SetToJson.exe` tool to convert your `.set` file to a `.json` file.
-
-    ```bash
-    SetToJson.exe "path\to\your\set\file.set" "path\to\your\json\file.json"
-    ```
+1.  **Prepare your input folder:**
+    Create a folder and place all the `.set` files you want to test inside it.
 
 2.  **Run the back-tester:**
-    Run the back-tester by providing the path to your `.json` file and the output folder as command-line arguments.
+    Open a command prompt or PowerShell and run the back-tester. You need to provide the path to your input folder (containing the `.set` files) and the path to an output folder where the reports will be saved.
 
     ```bash
-    MT4BackTester.exe "path\to\your\json\file.json" "path\to\your\output\folder"
+    MT4BackTester.exe "path\to\your\input\folder" "path\to\your\output\folder"
     ```
 
-    The back-tester will then run a single backtest with the settings from the `.json` file. The backtest report and settings will be saved in the specified output folder.
+    The tool will then iterate through all the `.set` files in the input folder, launch an MT4 backtest for each one, and save the corresponding report (`.htm`) and settings (`.set`) files to your specified output folder.

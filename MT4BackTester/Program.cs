@@ -16,29 +16,31 @@ namespace MT4BackTester
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: MT4BackTester.exe <json_file> <output_folder>");
+                Console.WriteLine("Usage: MT4BackTester.exe <input_folder> <output_folder>");
                 return;
             }
 
-            string jsonFile = args[0];
+            string inputFolder = args[0];
             string outputFolder = args[1];
 
-            if (!File.Exists(jsonFile))
+            if (!Directory.Exists(inputFolder))
             {
-                Console.WriteLine($"Json file not found: {jsonFile}");
+                Console.WriteLine($"Input folder not found: {inputFolder}");
                 return;
             }
 
-            try
+            var setFiles = Directory.GetFiles(inputFolder, "*.set");
+            foreach (var setFile in setFiles)
             {
-                string json = File.ReadAllText(jsonFile);
-                var settings = JsonConvert.DeserializeObject<BacktestSettings>(json);
-
-                RunBacktest(settings, outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing json file {jsonFile}: {ex.Message}");
+                try
+                {
+                    var settings = GetSettingsFromFile(setFile);
+                    RunBacktest(settings, outputFolder);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing set file {setFile}: {ex.Message}");
+                }
             }
         }
 
@@ -174,5 +176,36 @@ namespace MT4BackTester
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public Dictionary<string, object> Parameters { get; set; }
+    }
+
+    static BacktestSettings GetSettingsFromFile(string setFile)
+    {
+        var parameters = new Dictionary<string, string>();
+        var lines = File.ReadAllLines(setFile);
+        foreach (var line in lines)
+        {
+            var parts = line.Split('=');
+            if (parts.Length == 2)
+            {
+                parameters.Add(parts[0], parts[1]);
+            }
+        }
+
+        var settings = new BacktestSettings
+        {
+            ExpertAdvisor = "AcePhoenixStd3.71",
+            Symbol = "EURUSD",
+            Period = 15,
+            FromDate = new DateTime(2023, 1, 1),
+            ToDate = new DateTime(2023, 12, 31),
+            Parameters = new Dictionary<string, object>()
+        };
+
+        foreach (var param in parameters)
+        {
+            settings.Parameters.Add(param.Key, param.Value);
+        }
+
+        return settings;
     }
 }
