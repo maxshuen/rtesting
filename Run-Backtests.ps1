@@ -12,6 +12,7 @@
 # Please update these paths to match your system configuration.
 # ===================================================================================
 
+# --- Main Settings ---
 # Path to the MT4 terminal executable.
 $mt4TerminalPath = "C:\Program Files (x86)\Alpari MT4 - bktst\terminal.exe"
 
@@ -23,6 +24,14 @@ $reportsDirectory = "D:\max\AI_CAD\MT4_backtester\Reports"
 
 # Path to the master .ini template file.
 $templateIniPath = ".\template.ini"
+
+# --- Debugging ---
+# Set this to $true to run in Debug Mode.
+# In Debug Mode, the script will:
+#   1. Process ONLY the first .set file it finds.
+#   2. Run the test in Visual Mode so you can see the chart.
+#   3. Keep the terminal open after the test so you can check logs.
+$debugMode = $false
 
 
 # ===================================================================================
@@ -40,6 +49,13 @@ function Write-Log {
 
 # --- 1. Initial Sanity Checks ---
 Write-Log "Starting the backtesting script..." -Color Cyan
+
+if ($debugMode) {
+    Write-Log "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" -Color Yellow
+    Write-Log "!!         DEBUG MODE IS ENABLED            !!" -Color Yellow
+    Write-Log "!!  Will process 1 file in VISUAL mode.     !!" -Color Yellow
+    Write-Log "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" -Color Yellow
+}
 
 if (-not (Test-Path -Path $mt4TerminalPath)) {
     Write-Log "FATAL ERROR: MT4 Terminal not found at '$mt4TerminalPath'." -Color Red
@@ -66,13 +82,19 @@ if (-not (Test-Path -Path $reportsDirectory)) {
 }
 
 # --- 2. Find and Process .set Files ---
-$setFiles = Get-ChildItem -Path $setFilesDirectory -Filter *.set
+$setFiles = Get-ChildItem -Path $setFilesDirectory -Filter *.set | Sort-Object Name
 if ($setFiles.Count -eq 0) {
     Write-Log "No .set files found in '$setFilesDirectory'. Nothing to do." -Color Yellow
     exit
 }
 
-Write-Log "Found $($setFiles.Count) '.set' files to process." -Color Green
+# If in debug mode, only process the first file
+if ($debugMode) {
+    Write-Log "Debug mode: Selecting first file to process: $($setFiles[0].Name)" -Color Yellow
+    $setFiles = $setFiles[0]
+}
+
+Write-Log "Found $($setFiles.Count) '.set' file(s) to process." -Color Green
 $templateIniContent = Get-Content $templateIniPath -Raw
 
 # --- 3. Main Processing Loop ---
@@ -85,12 +107,24 @@ foreach ($setFile in $setFiles) {
     $reportFilePath = Join-Path $reportsDirectory $reportFileName
     $tempIniPath = ".\_temp_current_test.ini"
 
+    # Ensure paths in the INI file use double backslashes for compatibility
+    $setFilePathForIni = $setFile.FullName.Replace('\', '\\')
+    $reportFilePathForIni = $reportFilePath.Replace('\', '\\')
+
     Write-Log "Report will be saved to: $reportFilePath"
 
     # Create the temporary .ini file for this run
     Write-Log "Generating temporary configuration file..."
-    $runIniContent = $templateIniContent -replace "__SET_FILE_PATH__", $setFile.FullName
-    $runIniContent = $runIniContent -replace "__REPORT_FILE_PATH__", $reportFilePath
+    $runIniContent = $templateIniContent -replace "__SET_FILE_PATH__", $setFilePathForIni
+    $runIniContent = $runIniContent -replace "__REPORT_FILE_PATH__", $reportFilePathForIni
+
+    # Modify config for Debug Mode if enabled
+    if ($debugMode) {
+        Write-Log "Debug mode: Modifying config for visual test." -Color Yellow
+        $runIniContent = $runIniContent -replace "Visual=false", "Visual=true"
+        $runIniContent = $runIniContent -replace "ShutdownTerminal=true", "ShutdownTerminal=false"
+    }
+
     $runIniContent | Out-File -FilePath $tempIniPath -Encoding utf8
 
     # Launch the backtest
@@ -107,12 +141,16 @@ foreach ($setFile in $setFiles) {
         exit
     }
 
-    # Verify that the report was created
-    if (Test-Path $reportFilePath) {
-        Write-Log "SUCCESS: Report file created successfully." -Color Green
-    } else {
-        Write-Log "ERROR: Report file was NOT found after the test." -Color Red
-        Write-Log "Please check MT4's 'Journal' and 'Experts' tabs for errors." -Color Red
+    # In debug mode, we don't check for the report because the terminal stays open.
+    if (-not $debugMode) {
+        # Verify that the report was created
+        if (Test-Path $reportFilePath) {
+            Write-Log "SUCCESS: Report file created successfully." -Color Green
+        } else {
+            Write-Log "ERROR: Report file was NOT found after the test." -Color Red
+            Write-Log "Please check MT4's 'Journal' and 'Experts' tabs for errors." -Color Red
+            Write-Log "TIP: Try running this script in Debug Mode by setting `$debugMode = `$true at the top of the script." -Color Cyan
+        }
     }
 
     # Clean up the temporary file
@@ -121,5 +159,9 @@ foreach ($setFile in $setFiles) {
 }
 
 Write-Log "------------------------------------------------------------" -Color Cyan
-Write-Log "All backtests have been processed." -Color Green
+if ($debugMode) {
+    Write-Log "Debug run complete. The MT4 terminal should be open for inspection." -Color Yellow
+} else {
+    Write-Log "All backtests have been processed." -Color Green
+}
 Write-Log "You can find the reports in: $reportsDirectory"
