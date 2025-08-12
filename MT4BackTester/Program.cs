@@ -166,6 +166,37 @@ namespace MT4BackTester
             }
             return parameters;
         }
+
+        static BacktestSettings GetSettingsFromFile(string setFile)
+        {
+            var parameters = new Dictionary<string, string>();
+            var lines = File.ReadAllLines(setFile);
+            foreach (var line in lines)
+            {
+                var parts = line.Split('=');
+                if (parts.Length == 2)
+                {
+                    parameters.Add(parts[0], parts[1]);
+                }
+            }
+
+            var settings = new BacktestSettings
+            {
+                ExpertAdvisor = "AcePhoenixStd3.71",
+                Symbol = "EURUSD",
+                Period = 15,
+                FromDate = new DateTime(2023, 1, 1),
+                ToDate = new DateTime(2023, 12, 31),
+                Parameters = new Dictionary<string, object>()
+            };
+
+            foreach (var param in parameters)
+            {
+                settings.Parameters.Add(param.Key, param.Value);
+            }
+
+            return settings;
+        }
     }
 
     public class BacktestSettings
@@ -176,36 +207,5 @@ namespace MT4BackTester
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public Dictionary<string, object> Parameters { get; set; }
-    }
-
-    static BacktestSettings GetSettingsFromFile(string setFile)
-    {
-        var parameters = new Dictionary<string, string>();
-        var lines = File.ReadAllLines(setFile);
-        foreach (var line in lines)
-        {
-            var parts = line.Split('=');
-            if (parts.Length == 2)
-            {
-                parameters.Add(parts[0], parts[1]);
-            }
-        }
-
-        var settings = new BacktestSettings
-        {
-            ExpertAdvisor = "AcePhoenixStd3.71",
-            Symbol = "EURUSD",
-            Period = 15,
-            FromDate = new DateTime(2023, 1, 1),
-            ToDate = new DateTime(2023, 12, 31),
-            Parameters = new Dictionary<string, object>()
-        };
-
-        foreach (var param in parameters)
-        {
-            settings.Parameters.Add(param.Key, param.Value);
-        }
-
-        return settings;
     }
 }
