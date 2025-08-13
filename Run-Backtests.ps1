@@ -105,7 +105,7 @@ foreach ($setFile in $setFiles) {
     # Define paths for this specific run
     $reportFileName = "Report-$($setFile.BaseName).htm"
     $reportFilePath = Join-Path $reportsDirectory $reportFileName
-    $tempIniPath = ".\_temp_current_test.ini"
+    $tempIniPath = Join-Path (Split-Path -Path $mt4TerminalPath -Parent) "_temp_current_test.ini"
 
     # Ensure paths in the INI file use double backslashes for compatibility
     $setFilePathForIni = $setFile.FullName.Replace('\', '\\')
@@ -114,9 +114,18 @@ foreach ($setFile in $setFiles) {
     Write-Log "Report will be saved to: $reportFilePath"
 
     # Create the temporary .ini file for this run
-    Write-Log "Generating temporary configuration file..."
-    $runIniContent = $templateIniContent -replace "__SET_FILE_PATH__", $setFilePathForIni
-    $runIniContent = $runIniContent -replace "__REPORT_FILE_PATH__", $reportFilePathForIni
+    Write-Log "Generating MINIMAL configuration file for DIAGNOSTIC test." -Color Magenta
+    # For this test, we are intentionally removing the ExpertParameters and Report lines
+    # to see if the backtest will start at all.
+
+    # Read the template file as an array of lines (robust method)
+    $tempIniLines = Get-Content -Path $templateIniPath
+
+    # Filter out the lines containing the placeholders
+    $filteredLines = $tempIniLines | Where-Object { $_ -notlike "*__SET_FILE_PATH__*" -and $_ -notlike "*__REPORT_FILE_PATH__*" }
+
+    # Join the remaining lines back into a single string (robust method)
+    $runIniContent = $filteredLines -join [System.Environment]::NewLine
 
     # Modify config for Debug Mode if enabled
     if ($debugMode) {
